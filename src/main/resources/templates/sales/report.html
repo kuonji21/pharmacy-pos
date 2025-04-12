@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EREC's Pharmacy - Sales Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #28a745;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .sidebar {
+            background-color: var(--dark-color);
+            color: white;
+            min-height: 100vh;
+            position: fixed;
+            width: 250px;
+            transition: all 0.3s;
+        }
+        .sidebar-header {
+            padding: 20px;
+            background-color: var(--primary-color);
+            text-align: center;
+        }
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+        .sidebar-nav .nav-item {
+            padding: 10px 20px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .sidebar-nav .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar-nav .nav-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-nav .nav-link i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .header {
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .active-nav {
+            background-color: var(--primary-color);
+        }
+        .active-nav:hover {
+            background-color: var(--success-color) !important;
+        }
+        @media print {
+            @page {
+                size: auto;
+                margin: 10mm;
+            }
+            
+            .sidebar, .header, .btn, form, .nav-item {
+                display: none !important;
+            }
+            
+            .content {
+                margin-left: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .card {
+                border: none !important;
+                margin-bottom: 15px !important;
+                box-shadow: none !important;
+            }
+            
+            .card-header {
+                background-color: #f8f9fa !important;
+                color: #000 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>EREC's Pharmacy</h3>
+            <p class="mb-0">Point of Sale System</p>
+        </div>
+        <ul class="sidebar-nav list-unstyled">
+            <li class="nav-item">
+                <a href="/dashboard" class="nav-link">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item active-nav">
+                <a href="/sales" class="nav-link">
+                    <i class="bi bi-cart"></i> Sales
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/products" class="nav-link">
+                    <i class="bi bi-box"></i> Products
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/customers" class="nav-link">
+                    <i class="bi bi-people"></i> Customers
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/suppliers" class="nav-link">
+                    <i class="bi bi-truck"></i> Suppliers
+                </a>
+            </li>
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <a href="/purchases" class="nav-link">
+                    <i class="bi bi-bag"></i> Purchases
+                </a>
+            </li>
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <a href="/reports" class="nav-link">
+                    <i class="bi bi-graph-up"></i> Reports
+                </a>
+            </li>
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <a href="/collections" class="nav-link">
+                    <i class="bi bi-cash"></i> Collections
+                </a>
+            </li>
+            <li class="nav-item mt-5">
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="nav-link btn btn-link text-white">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <div class="header">
+            <div>
+                <h4>Sales Report</h4>
+                <p class="mb-0">View sales analytics and performance</p>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    <span sec:authentication="name">U</span>
+                </div>
+                <div>
+                    <h6 class="mb-0" sec:authentication="name">Username</h6>
+                    <small sec:authentication="principal.authorities">Role</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Sales Reports & Analytics</h5>
+                <div>
+                    <button class="btn btn-light btn-sm" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Date Range Selector -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <form class="row g-3" id="reportForm">
+                                    <div class="col-md-4">
+                                        <label for="startDate" class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="endDate" class="form-label">End Date</label>
+                                        <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">Generate Report</button>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="quickDateRange" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Quick Select
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="quickDateRange">
+                                                <li><a class="dropdown-item" href="#" data-range="today">Today</a></li>
+                                                <li><a class="dropdown-item" href="#" data-range="yesterday">Yesterday</a></li>
+                                                <li><a class="dropdown-item" href="#" data-range="thisWeek">This Week</a></li>
+                                                <li><a class="dropdown-item" href="#" data-range="lastWeek">Last Week</a></li>
+                                                <li><a class="dropdown-item" href="#" data-range="thisMonth">This Month</a></li>
+                                                <li><a class="dropdown-item" href="#" data-range="lastMonth">Last Month</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Today's Sales</h5>
+                                <h3 class="card-text" th:text="${'₱' + #numbers.formatDecimal(todayTotal, 1, 2)}">₱0.00</h3>
+                                <p class="card-text" th:text="${todaySales.size() + ' transactions'}">0 transactions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Today's Profit</h5>
+                                <h3 class="card-text" th:text="${'₱' + #numbers.formatDecimal(todayProfit, 1, 2)}">₱0.00</h3>
+                                <p class="card-text">
+                                    <span th:if="${todayTotal > 0}" th:text="${#numbers.formatPercent(todayProfit / todayTotal, 1, 1)}">0%</span>
+                                    <span th:unless="${todayTotal > 0}">0%</span>
+                                    margin
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">This Week</h5>
+                                <h3 class="card-text" th:text="${'₱' + #aggregates.sum(weekSales.![amount])}">₱0.00</h3>
+                                <p class="card-text" th:text="${weekSales.size() + ' transactions'}">0 transactions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body">
+                                <h5 class="card-title">This Month</h5>
+                                <h3 class="card-text" th:text="${'₱' + #aggregates.sum(monthSales.![amount])}">₱0.00</h3>
+                                <p class="card-text" th:text="${monthSales.size() + ' transactions'}">0 transactions</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Daily Sales (Last 7 Days)</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="dailySalesChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Sales by Payment Method</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="paymentMethodChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Top Selling Products -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Top Selling Products</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>Code</th>
+                                                <th class="text-end">Units Sold</th>
+                                                <th class="text-end">Sales Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="product : ${topSellingProducts}" th:if="${product.soldQty > 0}">
+                                                <td th:text="${product.productName}">Product Name</td>
+                                                <td th:text="${product.productCode}">P001</td>
+                                                <td class="text-end" th:text="${product.soldQty}">10</td>
+                                                <td class="text-end" th:text="${'₱' + #numbers.formatDecimal(product.soldQty * #numbers.parseDecimal(product.price), 1, 2)}">₱100.00</td>
+                                            </tr>
+                                            <tr th:if="${topSellingProducts.?[soldQty > 0].size() == 0}">
+                                                <td colspan="4" class="text-center">No data available</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Low Stock Products</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>Code</th>
+                                                <th class="text-end">Current Stock</th>
+                                                <th class="text-end">Reorder Level</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="product : ${lowStockProducts}">
+                                                <td th:text="${product.productName}">Product Name</td>
+                                                <td th:text="${product.productCode}">P001</td>
+                                                <td class="text-end">
+                                                    <span th:text="${product.qty}" th:class="${#numbers.parseInteger(product.qty) <= 0 ? 'text-danger fw-bold' : ''}">5</span>
+                                                </td>
+                                                <td class="text-end" th:text="${product.reorderLevel}">10</td>
+                                            </tr>
+                                            <tr th:if="${lowStockProducts.empty}">
+                                                <td colspan="4" class="text-center">No low stock products</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get day names for last 7 days
+            const days = [];
+            const dailySalesData = [];
+            const today = new Date();
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(today.getDate() - i);
+                days.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
+                
+                // Replace with actual data
+                dailySalesData.push(Math.floor(Math.random() * 1000));
+            }
+            
+            // Daily Sales Chart
+            const dailySalesChart = new Chart(document.getElementById('dailySalesChart'), {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Sales Amount',
+                        data: dailySalesData,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return '₱' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Payment Method Chart - dummy data
+            const paymentMethodChart = new Chart(document.getElementById('paymentMethodChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Cash', 'Credit Card', 'Debit Card', 'Mobile Payment', 'Credit'],
+                    datasets: [{
+                        data: [65, 20, 8, 5, 2],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+            
+            // Handle quick date range selection
+            document.querySelectorAll('.dropdown-item[data-range]').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const range = this.getAttribute('data-range');
+                    const startDate = document.getElementById('startDate');
+                    const endDate = document.getElementById('endDate');
+                    
+                    const today = new Date();
+                    let start = new Date();
+                    
+                    switch (range) {
+                        case 'today':
+                            start = today;
+                            break;
+                        case 'yesterday':
+                            start.setDate(today.getDate() - 1);
+                            endDate.valueAsDate = start;
+                            break;
+                        case 'thisWeek':
+                            start.setDate(today.getDate() - today.getDay());
+                            break;
+                        case 'lastWeek':
+                            start.setDate(today.getDate() - today.getDay() - 7);
+                            endDate.valueAsDate = new Date(start);
+                            endDate.valueAsDate.setDate(start.getDate() + 6);
+                            break;
+                        case 'thisMonth':
+                            start.setDate(1);
+                            break;
+                        case 'lastMonth':
+                            start.setMonth(today.getMonth() - 1);
+                            start.setDate(1);
+                            endDate.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                            break;
+                    }
+                    
+                    startDate.valueAsDate = start;
+                    if (range === 'today' || range === 'thisWeek' || range === 'thisMonth') {
+                        endDate.valueAsDate = today;
+                    }
+                    
+                    // Auto submit form
+                    document.getElementById('reportForm').submit();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
